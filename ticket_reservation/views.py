@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from bus_ticket_booking.enum import BookingStatus
+from bus_ticket_booking.tasks import delete_completed_tasks
 from .models import TicketReservation
 from .serializers import ReservationSerializer  # You need to create a serializer for Reservation
 
@@ -15,6 +16,7 @@ def reservation_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
+        delete_completed_tasks()
         serializer = ReservationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()

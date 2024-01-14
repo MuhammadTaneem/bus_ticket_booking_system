@@ -1,8 +1,4 @@
-import datetime
-
-from celery import shared_task
 from django.db import models
-
 from bus_ticket_booking.enum import BookingStatus
 from schedule.models import Schedule
 from bus.models import BusSeat
@@ -30,29 +26,25 @@ class TicketReservation(models.Model):
         return f"{self.schedule.name}: by: {self.passenger} [departure:{self.departure_stop}] [arrival:{self.arrival_stop}]"
 
 
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django_celery_beat.models import PeriodicTask, IntervalSchedule, CrontabSchedule
-from datetime import timedelta
 
 
-@receiver(post_save, sender=TicketReservation)
-def schedule_ticket_cancellation(sender, instance, created, **kwargs):
-    if created and instance.status == 'pending':
-        schedule, created = CrontabSchedule.objects.get_or_create(
-            minute=15,  # Set to 15 minutes
-        )
-        PeriodicTask.objects.create(
-            crontab=schedule,
-            name=f"Cancel reservation {instance.id} if still pending",
-            task='your_app.tasks.cancel_pending_reservation',
-            args=[instance.id],
-        )
-
-
-@shared_task
-def cancel_pending_reservation(ticket_id):
-    ticket = TicketReservation.objects.get(id=ticket_id)
-    if ticket.status == BookingStatus.pending:
-        ticket.status = BookingStatus.canceled
-    ticket.save()
+# @receiver(post_save, sender=TicketReservation)
+# def schedule_ticket_cancellation(sender, instance, created, **kwargs):
+#     if created and instance.status == 'pending':
+#         schedule, created = CrontabSchedule.objects.get_or_create(
+#             minute=15,  # Set to 15 minutes
+#         )
+#         PeriodicTask.objects.create(
+#             crontab=schedule,
+#             name=f"Cancel reservation {instance.id} if still pending",
+#             task='your_app.tasks.cancel_pending_reservation',
+#             args=[instance.id],
+#         )
+#
+#
+# @shared_task
+# def cancel_pending_reservation(ticket_id):
+#     ticket = TicketReservation.objects.get(id=ticket_id)
+#     if ticket.status == BookingStatus.pending:
+#         ticket.status = BookingStatus.canceled
+#     ticket.save()
